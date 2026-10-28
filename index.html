@@ -5,20 +5,62 @@
 <meta property="og:title" content="Garimpo VIP">
 <meta property="og:description" content="Os achadinhos mais legais da Shopee, garimpados todo dia.">
 <style>
-body{font-family:system-ui,sans-serif;max-width:480px;margin:0 auto;padding:32px 16px;background:#F3EFE8;color:#24150A;line-height:1.5;text-align:center}
+body{font-family:system-ui,sans-serif;max-width:520px;margin:0 auto;padding:28px 16px;background:#F3EFE8;color:#24150A;line-height:1.5;text-align:center}
 h1{margin:0 0 4px;font-size:32px}
-p{margin:0 0 24px}
-a.botao{display:block;padding:18px;margin:0 0 14px;border-radius:14px;font-size:20px;font-weight:700;color:#fff;text-decoration:none}
+h2{margin:28px 0 12px;font-size:22px}
+p{margin:0 0 20px}
+a.botao{display:block;padding:16px;margin:0 0 12px;border-radius:14px;font-size:19px;font-weight:700;color:#fff;text-decoration:none}
 .zap{background:#25D366}.insta{background:#C13584}.tele{background:#229ED9}.yt{background:#C4302B}.face{background:#1877F2}
+#vitrine{display:grid;grid-template-columns:1fr 1fr;gap:12px;text-align:left}
+.item{display:flex;flex-direction:column;background:#fff;border-radius:14px;overflow:hidden;text-decoration:none;color:inherit;box-shadow:0 1px 3px rgba(36,21,10,.12)}
+.item img{width:100%;aspect-ratio:1;object-fit:cover;background:#E8E0D3}
+.item div{padding:8px 10px 10px;display:flex;flex-direction:column;gap:4px;flex:1}
+.item b{font-size:14px;line-height:1.3}
+.item s{font-size:12px;color:#8A7A68}
+.item .preco{font-size:17px;font-weight:800;color:#8A6A1F}
+.item .ver{margin-top:auto;background:#24150A;color:#F3EFE8;border-radius:10px;padding:8px;text-align:center;font-weight:700;font-size:14px}
+#vazio{color:#6B5A48}
 small{display:block;margin-top:28px;color:#6B5A48}small a{color:#8A6A1F}
 </style></head>
 <body>
 <h1>Garimpo VIP</h1>
 <p>Os achadinhos mais legais da Shopee, garimpados todo dia.</p>
+
+<h2>🛍️ Achados dos últimos dias</h2>
+<div id="vitrine"></div>
+<p id="vazio" hidden>Os achados estão chegando. Enquanto isso, veja no Instagram ou no Telegram 👇</p>
+
+<h2>📲 Receba os achados primeiro</h2>
 <a class="botao zap" href="https://whatsapp.com/channel/0029Vb9As8d2ER6ZGIsRPo0z">📲 Canal no WhatsApp</a>
-<a class="botao insta" href="https://www.instagram.com/garimpovip4">📸 Instagram</a>
 <a class="botao tele" href="https://t.me/garimpovipofertas">💬 Telegram</a>
+<a class="botao insta" href="https://www.instagram.com/garimpovip4">📸 Instagram</a>
 <a class="botao yt" href="https://www.youtube.com/@garimpoVIP4">▶️ YouTube</a>
 <a class="botao face" href="https://www.facebook.com/profile.php?id=61575880172375">👍 Facebook</a>
-<small>Os links das ofertas são de afiliado: você paga o mesmo preço e ajuda a página a continuar garimpando.</small>
+<small>Os links das ofertas são de afiliado: você paga o mesmo preço e ajuda a página a continuar garimpando. Preços conferidos no dia do post e podem mudar na loja.</small>
+
+<script>
+(function () {
+  var DADOS = "https://raw.githubusercontent.com/consultor-frederico/shopee-auto-ofertas/main/data/vitrine.json";
+  var LOJA = {shopee: "Shopee", aliexpress: "AliExpress"};
+  var caixa = document.getElementById("vitrine");
+  function el(tag, txt, cls) { var e = document.createElement(tag); if (txt) e.textContent = txt; if (cls) e.className = cls; return e; }
+  function brl(v) { return Number(v).toFixed(2).replace(".", ","); }
+  fetch(DADOS, {cache: "no-store"}).then(function (r) { return r.json(); }).then(function (d) {
+    var itens = (d && d.itens) || [];
+    if (!itens.length) throw new Error("vazio");
+    itens.forEach(function (it) {
+      var a = el("a", null, "item");
+      a.href = it.link; a.target = "_blank"; a.rel = "noopener sponsored";
+      var img = el("img"); img.src = it.imagem; img.alt = it.titulo; img.loading = "lazy";
+      var info = el("div");
+      info.appendChild(el("b", it.titulo));
+      if (it.preco_de) info.appendChild(el("s", "R$ " + brl(it.preco_de)));
+      if (it.preco) info.appendChild(el("span", "R$ " + it.preco, "preco"));
+      info.appendChild(el("span", "Ver na " + (LOJA[it.plataforma] || it.loja || "loja"), "ver"));
+      a.appendChild(img); a.appendChild(info);
+      caixa.appendChild(a);
+    });
+  }).catch(function () { document.getElementById("vazio").hidden = false; });
+})();
+</script>
 </body></html>
