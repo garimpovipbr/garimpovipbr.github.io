@@ -26,6 +26,14 @@ a.botao{display:block;padding:16px;margin:0 0 12px;border-radius:14px;font-size:
 .item .preco{font-size:17px;font-weight:800;color:#8A6A1F}
 .item .ver{margin-top:auto;background:#24150A;color:#F3EFE8;border-radius:10px;padding:8px;text-align:center;font-weight:700;font-size:14px}
 #vazio{color:#6B5A48}
+.busca{background:#24150A;color:#F3EFE8;border-radius:16px;padding:14px;margin:0 0 18px;text-align:left}
+.busca label{display:block;font-weight:700;font-size:16px;margin:0 0 8px}
+.busca input{width:100%;box-sizing:border-box;font-size:22px;padding:12px 14px;border-radius:12px;border:0;font-weight:700}
+#resultado{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}
+#resultado:empty{display:none}
+#resultado .item{color:#24150A}
+#nada{margin:10px 0 0;font-size:15px}
+.num{display:inline-block;align-self:flex-start;background:#E2BE68;color:#24150A;border-radius:8px;padding:1px 8px;font-size:13px;font-weight:800}
 .ze{display:flex;align-items:center;gap:14px;background:#fff;border-radius:16px;padding:10px 14px 10px 10px;margin:0 0 4px;text-align:left;box-shadow:0 1px 3px rgba(36,21,10,.12)}
 .ze img{width:96px;height:128px;object-fit:cover;border-radius:12px;flex:none}
 .ze span{font-size:16px}
@@ -36,6 +44,13 @@ small{display:block;margin-top:28px;color:#6B5A48}small a{color:#8A6A1F}
 <h1>Garimpo VIP</h1>
 <p>Os melhores achados da Shopee, AliExpress e lojas oficiais como Arno, Shark Ninja e VX Case, garimpados todo dia.</p>
 <div class="ze"><img src="ze.jpg" alt="Zé Garimpo" width="96" height="128"><span>Oi! Eu sou o <b>Zé Garimpo</b> 🤠 Separei os melhores achados pra você aqui embaixo 👇</span></div>
+
+<div class="busca">
+<label for="q">🔎 Viu no TikTok ou no YouTube? Digite o número do achado (ex.: 142) ou o nome do produto</label>
+<input id="q" type="search" inputmode="search" placeholder="Número ou nome" autocomplete="off">
+<div id="resultado"></div>
+<p id="nada" hidden>Não achei esse número. Confere no post ou procura pelo nome 😉</p>
+</div>
 
 <h2>🛍️ Achados dos últimos dias</h2>
 <div id="vitrine"></div>
@@ -54,23 +69,42 @@ small{display:block;margin-top:28px;color:#6B5A48}small a{color:#8A6A1F}
   var DADOS = "https://raw.githubusercontent.com/consultor-frederico/shopee-auto-ofertas/main/data/vitrine.json";
   var LOJA = {shopee: "Shopee", aliexpress: "AliExpress"};
   var caixa = document.getElementById("vitrine");
+  var busca = [];
   function el(tag, txt, cls) { var e = document.createElement(tag); if (txt) e.textContent = txt; if (cls) e.className = cls; return e; }
   function brl(v) { return Number(v).toFixed(2).replace(".", ","); }
+  function cartao(it) {
+    var a = el("a", null, "item");
+    a.href = it.link; a.target = "_blank"; a.rel = "noopener sponsored";
+    var img = el("img"); img.src = it.imagem; img.alt = it.titulo; img.loading = "lazy";
+    var info = el("div");
+    if (it.num) info.appendChild(el("span", "#" + it.num, "num"));
+    info.appendChild(el("b", it.titulo));
+    if (it.preco_de) info.appendChild(el("s", "R$ " + brl(it.preco_de)));
+    if (it.preco) info.appendChild(el("span", "R$ " + it.preco, "preco"));
+    info.appendChild(el("span", "Ver na " + (LOJA[it.plataforma] || it.loja || "loja"), "ver"));
+    a.appendChild(img); a.appendChild(info);
+    return a;
+  }
+  function semAcento(t) { return String(t || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, ""); }
+  function buscar() {
+    var q = semAcento(document.getElementById("q").value).replace("#", "").trim();
+    var res = document.getElementById("resultado"), nada = document.getElementById("nada");
+    res.textContent = ""; nada.hidden = true;
+    if (!q) return;
+    var achou = /^\d+$/.test(q)
+      ? busca.filter(function (it) { return String(it.num) === q; })
+      : busca.filter(function (it) { return q.length > 2 && semAcento(it.titulo).indexOf(q) >= 0; }).slice(0, 6);
+    achou.forEach(function (it) { res.appendChild(cartao(it)); });
+    nada.hidden = achou.length > 0 || (!/^\d+$/.test(q) && q.length <= 2);
+  }
+  document.getElementById("q").addEventListener("input", buscar);
   fetch(DADOS, {cache: "no-store"}).then(function (r) { return r.json(); }).then(function (d) {
     var itens = (d && d.itens) || [];
+    busca = (d && d.busca) || [];
+    var pedido = (location.hash || "").replace("#", "");   // garimpovipbr.github.io/#142 abre direto o achado
+    if (/^\d+$/.test(pedido)) { document.getElementById("q").value = pedido; buscar(); }
     if (!itens.length) throw new Error("vazio");
-    itens.forEach(function (it) {
-      var a = el("a", null, "item");
-      a.href = it.link; a.target = "_blank"; a.rel = "noopener sponsored";
-      var img = el("img"); img.src = it.imagem; img.alt = it.titulo; img.loading = "lazy";
-      var info = el("div");
-      info.appendChild(el("b", it.titulo));
-      if (it.preco_de) info.appendChild(el("s", "R$ " + brl(it.preco_de)));
-      if (it.preco) info.appendChild(el("span", "R$ " + it.preco, "preco"));
-      info.appendChild(el("span", "Ver na " + (LOJA[it.plataforma] || it.loja || "loja"), "ver"));
-      a.appendChild(img); a.appendChild(info);
-      caixa.appendChild(a);
-    });
+    itens.forEach(function (it) { caixa.appendChild(cartao(it)); });
   }).catch(function () { document.getElementById("vazio").hidden = false; });
 })();
 </script>
